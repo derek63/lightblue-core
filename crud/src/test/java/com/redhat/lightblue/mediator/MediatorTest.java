@@ -18,13 +18,6 @@
  */
 package com.redhat.lightblue.mediator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -50,6 +43,12 @@ import com.redhat.lightblue.query.Value;
 import com.redhat.lightblue.query.ValueComparisonExpression;
 import com.redhat.lightblue.util.JsonDoc;
 import com.redhat.lightblue.util.Path;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MediatorTest extends AbstractMediatorTest {
 
@@ -88,12 +87,46 @@ public class MediatorTest extends AbstractMediatorTest {
     }
 
     @Test
+    public void insertRoleAccessCaseInsensitiveTest() throws Exception {
+        InsertionRequest req = new InsertionRequest();
+        req.setEntityVersion(new EntityVersion("test", "1.0"));
+        req.setEntityData(loadJsonNode("./sample1.json"));
+        req.setReturnFields(null);
+        req.setClientId(new RestClientIdentification(Arrays.asList("TeSt-InSeRt", "tEsT-uPdAtE")));
+
+        Response response = mediator.insert(req);
+
+        Assert.assertEquals(OperationStatus.COMPLETE, response.getStatus());
+        Assert.assertEquals(1, response.getModifiedCount());
+        Assert.assertEquals(0, response.getMatchCount());
+        Assert.assertEquals(0, response.getDataErrors().size());
+        Assert.assertEquals(0, response.getErrors().size());
+    }
+
+    @Test
     public void insertFieldAccessTest() throws Exception {
         InsertionRequest req = new InsertionRequest();
         req.setEntityVersion(new EntityVersion("test", "1.0"));
         req.setEntityData(loadJsonNode("./sample1.json"));
         req.setReturnFields(null);
         req.setClientId(new RestClientIdentification(Arrays.asList("test.field1-insert", "test-insert")));
+
+        Response response = mediator.insert(req);
+
+        Assert.assertEquals(OperationStatus.COMPLETE, response.getStatus());
+        Assert.assertEquals(1, response.getModifiedCount());
+        Assert.assertEquals(0, response.getMatchCount());
+        Assert.assertEquals(0, response.getDataErrors().size());
+        Assert.assertEquals(0, response.getErrors().size());
+    }
+
+    @Test
+    public void insertFieldAccessCaseInsensitiveTest() throws Exception {
+        InsertionRequest req = new InsertionRequest();
+        req.setEntityVersion(new EntityVersion("test", "1.0"));
+        req.setEntityData(loadJsonNode("./sample1.json"));
+        req.setReturnFields(null);
+        req.setClientId(new RestClientIdentification(Arrays.asList("test.field1-InSeRt", "test-iNsErT")));
 
         Response response = mediator.insert(req);
 
@@ -292,11 +325,53 @@ public class MediatorTest extends AbstractMediatorTest {
     }
 
     @Test
+    public void findRoleCaseInsensitiveTest() throws Exception {
+        FindRequest req = new FindRequest();
+        req.setEntityVersion(new EntityVersion("test", "1.0"));
+
+        mdManager.md.getAccess().getFind().setRoles("RoLe1");
+        mockCrudController.findResponse = new CRUDFindResponse();
+        Response response = mediator.find(req);
+
+        Assert.assertEquals(OperationStatus.ERROR, response.getStatus());
+        Assert.assertEquals(0, response.getModifiedCount());
+        Assert.assertEquals(0, response.getMatchCount());
+        Assert.assertEquals(0, response.getDataErrors().size());
+        Assert.assertEquals(1, response.getErrors().size());
+        Assert.assertEquals(CrudConstants.ERR_NO_ACCESS, response.getErrors().get(0).getErrorCode());
+
+        mdManager.md.getAccess().getFind().setRoles("aNyOnE");
+        mockCrudController.findResponse.setSize(0);
+        response = mediator.find(req);
+        Assert.assertEquals(OperationStatus.COMPLETE, response.getStatus());
+        Assert.assertEquals(0, response.getModifiedCount());
+        Assert.assertEquals(0, response.getMatchCount());
+        Assert.assertEquals(0, response.getDataErrors().size());
+        Assert.assertEquals(0, response.getErrors().size());
+    }
+
+    @Test
     public void findQueryFieldRoleTest() throws Exception {
         FindRequest req = new FindRequest();
         req.setEntityVersion(new EntityVersion("test", "1.0"));
         req.setQuery(new ValueComparisonExpression(new Path("field1"), BinaryComparisonOperator._eq, new Value("x")));
         req.setClientId(new RestClientIdentification(Arrays.asList("test-find")));
+
+        mockCrudController.findResponse = new CRUDFindResponse();
+        Response response = mediator.find(req);
+        Assert.assertEquals(OperationStatus.ERROR, response.getStatus());
+
+        req.setQuery(new ValueComparisonExpression(new Path("field2"), BinaryComparisonOperator._eq, new Value("x")));
+        response = mediator.find(req);
+        Assert.assertEquals(OperationStatus.COMPLETE, response.getStatus());
+    }
+
+    @Test
+    public void findQueryFieldRoleCaseInsensitiveTest() throws Exception {
+        FindRequest req = new FindRequest();
+        req.setEntityVersion(new EntityVersion("test", "1.0"));
+        req.setQuery(new ValueComparisonExpression(new Path("field1"), BinaryComparisonOperator._eq, new Value("x")));
+        req.setClientId(new RestClientIdentification(Arrays.asList("tEsT-FiNd")));
 
         mockCrudController.findResponse = new CRUDFindResponse();
         Response response = mediator.find(req);

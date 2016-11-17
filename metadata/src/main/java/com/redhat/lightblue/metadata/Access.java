@@ -18,6 +18,7 @@
  */
 package com.redhat.lightblue.metadata;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -91,14 +92,14 @@ public class Access extends MetadataObject {
      * Returns if anyone can perform this operation
      */
     public boolean isAnyone() {
-        return values.contains(MetadataConstants.ROLE_ANYONE);
+        return containsIgnoreCase(MetadataConstants.ROLE_ANYONE);
     }
 
     /**
      * Returns if noone can perform this operation
      */
     public boolean isNoone() {
-        return values.contains(MetadataConstants.ROLE_NOONE);
+        return containsIgnoreCase(MetadataConstants.ROLE_NOONE);
     }
 
     /**
@@ -108,7 +109,7 @@ public class Access extends MetadataObject {
         if (isNoone()) {
             return false;
         }
-        return isAnyone() || values.contains(role);
+        return isAnyone() || containsIgnoreCase(role);
     }
 
     /**
@@ -122,10 +123,21 @@ public class Access extends MetadataObject {
             return true;
         }
         for (String x : roles) {
-            if (values.contains(x)) {
+            if (containsIgnoreCase(x)) {
                 return true;
             }
         }
         return false;
     }
+
+    public boolean containsIgnoreCase(String role){
+        for(String value : new ArrayList<>(values)) {
+            if(value.equalsIgnoreCase(role)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 }
